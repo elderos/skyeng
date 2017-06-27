@@ -1,4 +1,26 @@
 from datetime import datetime
+import logging
+
+def init_logging():
+    formatter = logging.Formatter('%(asctime)s %(message)s')
+
+    log = logging.getLogger('skyeng')
+    log.setLevel(logging.DEBUG)
+
+    fh = logging.FileHandler('log.txt')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
+
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    ch.setLevel(logging.INFO)
+
+    log.addHandler(ch)
+    return log
+
+log = init_logging()
+
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
