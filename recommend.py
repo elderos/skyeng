@@ -36,7 +36,7 @@ def main(args):
         if word_count < 20:
             continue
         boundary = len(words) / 2
-        seed = set(words[:boundary])
+        seed = set([x.en for x in words[:boundary]])
         actual = set(words[boundary:])
         predicted = alg.predict(seed, args.hypos_count + len(seed))
 
@@ -62,7 +62,7 @@ def main(args):
             if word in seed:
                 continue
             predicted_len += 1
-            print word, score
+            print word, score, word in actual
             if predicted_len >= args.hypos_count:
                 break
         print 'Intersection: %s of %s/%s' % (intersected, len(actual), predicted_len)

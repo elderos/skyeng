@@ -1,16 +1,57 @@
 #content {
-    max-width: 1024px;
-    min-width: 320px;
+    max-width: 600px;
+    min-width: 475px;
     margin: 0 auto;
 }
 
 #seed-area {
     max-width: 100%;
     min-width: 100%;
-    min-height: 400px;
+    min-height: 200px;
+    resize: vertical;
 }
 
 #results {
     min-width: 100%;
     max-width: 100%;
+}
+
+#predict-btn {
+    min-width: 100px;
+    min-height: 30px;
+}
+
+.word-container {
+    display: flex;
+    min-width: 100%;
+    flex-direction: row;
+    border: 1px gray solid;
+}
+
+.word-cell {
+    padding: 3px;
+    flex: 1;
+    border-left: solid 1px gray;
+    word-break: normal;
+    word-wrap: break-word;
+}
+
+.meaning {
+    max-width: 75px;
+    min-width: 75px;
+}
+
+.en {
+    max-width: 150px;
+    min-width: 150px;
+}
+
+.ru {
+    max-width: 150px;
+    min-width: 150px;
+}
+
+.score {
+    max-width: 100px;
+    min-width: 100px;
 }

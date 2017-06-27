@@ -11,7 +11,7 @@ class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
         self.methods = {
-            #'collab': CollabPredict.load('collab.model'),
+            'collab': CollabPredict.load('collab.model'),
         }
 
     @cherrypy.expose
@@ -24,8 +24,17 @@ class WordPredict(object):
         res = []
         for method_name, method in self.methods.items():
             res.append({
-                method_name: [method.predict(jdata)]
+                'title': method_name,
+                'words': [
+                    {
+                        'meaning_id': x['word'].meaning_id,
+                        'en': x['word'].en,
+                        'ru': x['word'].ru,
+                        'score': x['score']
+                    } for x in method.predict(jdata, 30)
+                    ]
             })
+        return json.dumps(res)
 
 
 
@@ -36,7 +45,7 @@ def main(args):
         'log.access_file': './access.log',
         'log.error_file': './error.log',
         'tools.staticdir.on': True,
-        'tools.staticdir.dir': '/home/site/skyeng/static',
+        'tools.staticdir.dir': os.getcwd() + '/static',
         'tools.staticdir.index': 'index.html'
     })
     cherrypy.quickstart(
