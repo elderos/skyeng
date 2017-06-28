@@ -4,6 +4,7 @@ import numpy as np
 from common import AddedWord, log
 import cPickle
 
+
 class Stats(object):
     __slots__ = ['count', 'words', 'word']
 

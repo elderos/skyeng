@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 
+
 def init_logging():
     formatter = logging.Formatter('%(asctime)s %(message)s')
 

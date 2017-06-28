@@ -111,7 +111,7 @@ function on_predict_btn(){
 }
 
 window.addEventListener('popstate', function (e) {
-    load_predicted_words(e.state);
+    load_from_params();
 });
 
 window.addEventListener('load', function () {

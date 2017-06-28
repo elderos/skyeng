@@ -8,6 +8,7 @@ import ujson as json
 from collab import CollabPredict, Stats
 import cherrypy_cors
 
+
 class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
