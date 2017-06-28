@@ -6,6 +6,7 @@ from cherrypy.lib.static import serve_file
 import os
 import ujson as json
 from collab import CollabPredict, Stats
+import cherrypy_cors
 
 class WordPredict(object):
     def __init__(self):
@@ -37,8 +38,16 @@ class WordPredict(object):
         return json.dumps(res)
 
 
+def CORS():
+    cherrypy.response.headers['Access-Control-Allow-Origin'] = 'http://eantonov.name'
+    # cherrypy.response.headers['Access-Control-Allow-Headers'] = '*'
+    cherrypy.response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
+
 
 def main(args):
+    cherrypy_cors.install()
+    cherrypy.tools.CORS = cherrypy.Tool('before_handler', CORS)
+
     cherrypy.config.update({
         'server.socket_host': '0.0.0.0',
         'server.socket_port': args.port,
@@ -46,7 +55,9 @@ def main(args):
         'log.error_file': './error.log',
         'tools.staticdir.on': True,
         'tools.staticdir.dir': os.getcwd() + '/static',
-        'tools.staticdir.index': 'index.html'
+        'tools.staticdir.index': 'index.html',
+        'tools.CORS.on': True,
+        'cors.expose.on': True
     })
     cherrypy.quickstart(
         WordPredict(),
