@@ -4,6 +4,7 @@ function clear(element) {
     }
 }
 
+
 function Cell(content, _class) {
     var element = document.createElement('div');
     element.classList.add(_class);
@@ -36,13 +37,36 @@ function Section(jdata){
 }
 
 
-function load_predicted_words(){
-    var seeds = document.getElementById('seed-area').value.split(/\r?\n/);
-    var seeds_param = JSON.stringify(seeds);
-    seeds_param = encodeURIComponent(seeds_param);
+function load_from_params(){
+    var url = window.location.href;
+    var params_index = url.indexOf('?');
+    if (!params_index || params_index < 0){
+        return;
+    }
 
+    var params = url.substring(url.indexOf('?') + 1);
+    var kv = params.split('&');
+    var params_dict = {
+        seeds: ''
+    };
+    kv.forEach(function(x){
+        var arr = x.split('=');
+        var key = arr[0];
+        params_dict[key] = decodeURIComponent(arr[1]);
+    });
+
+
+    load_predicted_words(params.seeds)
+}
+
+
+function load_predicted_words(seeds){
     var results_container = document.getElementById('results');
     clear(results_container);
+
+    if (!seeds){
+        return;
+    }
 
     var req = new XMLHttpRequest();
     req.open('GET', 'http://eantonov.name/skyeng/get-predicted-words?seeds=' + seeds_param, true);
@@ -59,5 +83,22 @@ function load_predicted_words(){
         }
     };
     req.send(null);
-
 }
+
+
+function on_predict_btn(){
+    var seeds = document.getElementById('seed-area').value.split(/\r?\n/);
+    var seeds_param = JSON.stringify(seeds);
+    seeds_param = encodeURIComponent(seeds_param);
+
+    window.history.pushState(seeds_param, 'Word predict', 'http://eantonov.name/skyeng/?seeds=' + seeds_param);
+    load_predicted_words(seeds_param);
+}
+
+window.addEventListener('popstate', function (e) {
+    load_predicted_words(e.state);
+});
+
+window.addEventListener('load', function () {
+    load_from_params();
+});
