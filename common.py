@@ -53,6 +53,18 @@ class Word(object):
     def __repr__(self):
         return str(self)
 
+    def __ge__(self, other):
+        return self.meaning_id >= other.meaning_id
+
+    def __gt__(self, other):
+        return self.meaning_id > other.meaning_id
+
+    def __le__(self, other):
+        return self.meaning_id <= other.meaning_id
+
+    def __lt__(self, other):
+        return self.meaning_id < other.meaning_id
+
 
 class AddedWord(object):
     __slots__ = ['user_id', 'word', 'creation_time', 'source']
