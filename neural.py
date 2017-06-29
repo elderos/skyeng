@@ -46,7 +46,7 @@ class NeuralPredict(object):
             for i, line in enumerate(f):
                 if (i + 1) % 1000000 == 0:
                     log.info('%sM lines done.' % ((i + 1)/1000000))
-                    # break
+                    #break
                 added_word = AddedWord.parse(line)
                 if not added_word.source.startswith('search_'):
                     continue
@@ -67,39 +67,44 @@ class NeuralPredict(object):
             return index + 1
         return 0
 
-    def make_input_vector(self, seeds):
-        indexes = [self.vocab_index(x) for x in seeds]
-        indexes = [x for x in indexes if x > 0]
-        indexes = indexes[-self.seq_len:]
-        seeds_vec = np.zeros(self.seq_len, dtype=np.uint32)
-        seeds_vec[0:len(indexes)] = indexes
-        return seeds_vec.reshape(self.seq_len)
+    def fill_input_vectors(self, seeds_arr, batch_arr, offset):
+        for i, seeds in enumerate(seeds_arr):
+            batch_arr[offset + i] *= 0
+            for k in xrange(min([self.seq_len, len(seeds)])):
+                seed = seeds[k]
+                batch_arr[offset + i][k] = self.vocab_index(seed)
 
     def batch_generator(self, batch_size):
-        log.info('Building dataset...')
+        log.info('Start building dataset')
+        log.info('Sorting added words')
         self.added_words.sort(key=lambda x: (x.user_id, x.creation_time))
         epoch = 0
-        users = [x[1] for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
-        X, Y = [], []
+        log.info('Grouping by user')
+        users = [list(x[1]) for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
+        log.info('Allocating buffers')
+        X = np.ndarray(shape=(batch_size, self.seq_len), dtype=np.uint32)
+        Y = np.ndarray(shape=(batch_size, len(self.meanings)), dtype=np.float32)
+        X_pos = 0
+        log.info('Start filling buffers')
         while True:
             random.shuffle(users)
             for added_words in users:
-                words = list(added_words)
+                words = added_words
                 if len(words) < 6:
                     continue
                 for i in xrange(5, len(words)):
                     seeds = [x.meaning.en for x in words[max(0, i - self.seq_len):i]]
-                    x_vec = self.make_input_vector(seeds)
-                    X.append(x_vec)
-
+                    self.fill_input_vectors([seeds], X, X_pos)
                     y_index = bisect_left(self.meanings, words[i].meaning)
                     assert self.meanings[y_index] == words[i].meaning
-                    target = to_categorical(y_index, num_classes=len(self.meanings))
-                    Y.append(target)
-                    if len(X) >= batch_size:
-                        yield epoch, np.array(X).reshape((len(X), self.seq_len)), np.array(Y).reshape((len(X), len(self.meanings)))
-                        X = []
-                        Y = []
+                    Y[X_pos] *= 0
+                    Y[X_pos][y_index] = 1.0
+                    X_pos += 1
+
+                    if X_pos >= len(X):
+                        yield epoch, X, Y
+                        X_pos = 0
+
             epoch += 1
 
     def train(self, train_file, args):
@@ -153,9 +158,9 @@ class NeuralPredict(object):
         return self
 
     def predict(self, seeds, max_hypos):
-        seed_vec = self.make_input_vector(seeds)
-        X = np.array(seed_vec).reshape((1, self.seq_len))
-        output = self.model.predict(X)[0]
+        seed_vec = np.ndarray(shape=(1, self.seq_len))
+        self.fill_input_vectors([seeds], seed_vec, 0)
+        output = self.model.predict(seed_vec)[0]
         expect_count = len(seeds) + max_hypos
 
         seeds = set(seeds)
@@ -186,8 +191,8 @@ def main(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-e', '--epochs', default=10, type=int)
-    parser.add_argument('-b', '--batch-size', default=2048, type=int)
-    parser.add_argument('-g', '--gen-batch-size', default=100000, type=int, help='Batch size for dataset generator')
+    parser.add_argument('-b', '--batch-size', default=1000, type=int)
+    parser.add_argument('-g', '--gen-batch-size', default=10000, type=int, help='Batch size for dataset generator')
     parser.add_argument('-t', '--train', default='user_words_train.tsv')
     parser.add_argument('-m', '--model', default='neural.model')
     args = parser.parse_args()

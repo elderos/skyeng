@@ -40,7 +40,7 @@ def main(args):
         boundary = len(meanings) / 2
         seed = set([x.en for x in meanings[:boundary]])
         actual = set(meanings[boundary:])
-        predicted = alg.predict(seed, args.hypos_count + len(seed))
+        predicted = alg.predict(list(seed), args.hypos_count + len(seed))
 
         print '-' * 30
         print '-' * 30
