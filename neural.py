@@ -9,9 +9,9 @@ import numpy as np
 from keras.utils import to_categorical
 import ujson as json
 import tempfile
-import gc
 import os
 from base64 import b64encode, b64decode
+import random
 
 class NeuralPredict(object):
     def __init__(self, min_freq, seq_len):
@@ -75,48 +75,48 @@ class NeuralPredict(object):
         seeds_vec[0:len(indexes)] = indexes
         return seeds_vec.reshape(self.seq_len)
 
-    def make_dataset(self):
-        X, Y = [], []
-
+    def batch_generator(self, batch_size):
         log.info('Building dataset...')
         self.added_words.sort(key=lambda x: (x.user_id, x.creation_time))
-        i = 0
-        for user_id, added_words in it.groupby(self.added_words, key=lambda x: x.user_id):
-            i += 1
-            if i % 20000 == 0:
-                log.info('Total %s users done' % i)
-            words = list(added_words)
-            if len(words) < 6:
-                continue
-            if len(words) > self.seq_len + 5:
-                words = words[-(self.seq_len + 5):]
-            for i in xrange(len(words) - 5, len(words)):
-                seeds = [x.meaning.en for x in words[max(0, i - self.seq_len):i]]
-                x_vec = self.make_input_vector(seeds)
-                X.append(x_vec)
+        epoch = 0
+        users = [x[1] for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
+        X, Y = [], []
+        while True:
+            random.shuffle(users)
+            for added_words in users:
+                words = list(added_words)
+                if len(words) < 6:
+                    continue
+                for i in xrange(5, len(words)):
+                    seeds = [x.meaning.en for x in words[max(0, i - self.seq_len):i]]
+                    x_vec = self.make_input_vector(seeds)
+                    X.append(x_vec)
 
-                y_index = bisect_left(self.meanings, words[i].meaning)
-                assert self.meanings[y_index] == words[i].meaning
-                target = to_categorical(y_index, num_classes=len(self.meanings))
-                Y.append(target)
-        log.info('Total %s examples' % len(X))
-        return np.array(X).reshape((len(X), self.seq_len)), np.array(Y).reshape((len(X), len(self.meanings)))
+                    y_index = bisect_left(self.meanings, words[i].meaning)
+                    assert self.meanings[y_index] == words[i].meaning
+                    target = to_categorical(y_index, num_classes=len(self.meanings))
+                    Y.append(target)
+                    if len(X) >= batch_size:
+                        yield epoch, np.array(X).reshape((len(X), self.seq_len)), np.array(Y).reshape((len(X), len(self.meanings)))
+                        X = []
+                        Y = []
+            epoch += 1
 
     def train(self, train_file, args):
         self.read_vocabs(train_file)
         self.model = self.build_model()
 
-        X, Y = self.make_dataset()
+        for epoch, X, Y in self.batch_generator(args.gen_batch_size):
+            if epoch >= args.epochs:
+                break
+            self.model.fit(
+                X, Y,
+                batch_size=args.batch_size,
+                epochs=1,
+                validation_split=0.2,
+                initial_epoch=epoch
+            )
 
-        self.added_words = None
-        gc.collect()
-
-        self.model.fit(
-            X, Y,
-            batch_size=args.batch_size,
-            epochs=args.epochs,
-            validation_split=0.2
-        )
 
     def save(self, model_filename):
         self.model.save(model_filename, overwrite=True)
@@ -187,6 +187,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-e', '--epochs', default=10, type=int)
     parser.add_argument('-b', '--batch-size', default=2048, type=int)
+    parser.add_argument('-g', '--gen-batch-size', default=100000, type=int, help='Batch size for dataset generator')
     parser.add_argument('-t', '--train', default='user_words_train.tsv')
     parser.add_argument('-m', '--model', default='neural.model')
     args = parser.parse_args()
