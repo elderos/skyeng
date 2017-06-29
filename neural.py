@@ -12,6 +12,17 @@ import tempfile
 import os
 from base64 import b64encode, b64decode
 import random
+import signal
+
+
+sigint_pressed = False
+
+
+def on_sigint(signal, frame):
+    global sigint_pressed
+    sigint_pressed = True
+    log.info('Catched SIGINT. Use SIGQUIT to exit immediately (Ctrl+\\)')
+
 
 class NeuralPredict(object):
     def __init__(self, min_freq, seq_len):
@@ -111,7 +122,11 @@ class NeuralPredict(object):
         self.read_vocabs(train_file)
         self.model = self.build_model()
 
+        signal.signal(signal.SIGINT, on_sigint)
         for epoch, X, Y in self.batch_generator(args.gen_batch_size):
+            if sigint_pressed:
+                log.info('Stop training due to SIGINT catched.')
+                break
             if epoch >= args.epochs:
                 break
             self.model.fit(
