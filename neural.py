@@ -8,10 +8,9 @@ from bisect import bisect_left
 import numpy as np
 from keras.utils import to_categorical
 import ujson as json
-import shutil
 import tempfile
 import gc
-
+import os
 
 class NeuralPredict(object):
     def __init__(self, min_freq, seq_len):
@@ -132,7 +131,7 @@ class NeuralPredict(object):
                 } for x in self.meanings
             ]
         }
-        shutil.rmtree(model_filename)
+        os.remove(model_filename)
         with open(model_filename, 'w') as f:
             json.dump(jdata, f)
 
