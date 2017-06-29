@@ -1,12 +1,16 @@
 from argparse import ArgumentParser
 from collections import defaultdict
 import itertools as it
-from common import AddedWord, log
-from keras.models import Sequential
+from common import AddedWord, log, Meaning
+from keras.models import Sequential, load_model
 from keras.layers import Embedding, Dense, GRU
 from bisect import bisect_left
 import numpy as np
 from keras.utils import to_categorical
+import ujson as json
+import shutil
+import tempfile
+import gc
 
 
 class NeuralPredict(object):
@@ -47,8 +51,8 @@ class NeuralPredict(object):
                 if not added_word.source.startswith('search_'):
                     continue
                 self.added_words.append(added_word)
-                words[added_word.word.en] += 1
-                meanings.add(added_word.word)
+                words[added_word.meaning.en] += 1
+                meanings.add(added_word.meaning)
 
         self.meanings = list(meanings)
         self.meanings.sort()
@@ -85,12 +89,12 @@ class NeuralPredict(object):
             if len(words) < 6:
                 continue
             for i in xrange(5, len(words)):
-                seeds = [x.word.en for x in words[max(0, i - self.seq_len):i]]
+                seeds = [x.meaning.en for x in words[max(0, i - self.seq_len):i]]
                 x_vec = self.make_input_vector(seeds)
                 X.append(x_vec)
 
-                y_index = bisect_left(self.meanings, words[i].word)
-                assert self.meanings[y_index] == words[i].word
+                y_index = bisect_left(self.meanings, words[i].meaning)
+                assert self.meanings[y_index] == words[i].meaning
                 target = to_categorical(y_index, num_classes=len(self.meanings)).reshape(len(self.meanings))
                 Y.append(target)
         log.info('Total %s examples' % len(X))
@@ -98,19 +102,52 @@ class NeuralPredict(object):
 
     def train(self, train_file, args):
         self.read_vocabs(train_file)
-        model = self.build_model()
+        self.model = self.build_model()
 
         X, Y = self.make_dataset()
 
-        model.fit(
+        self.added_words = None
+        gc.collect()
+
+        self.model.fit(
             X, Y,
             batch_size=args.batch_size,
             epochs=args.epochs,
             validation_split=0.2
         )
 
-    def save(self, filename):
-        pass
+    def save(self, model_filename):
+        self.model.save(model_filename, overwrite=True)
+        with open(model_filename, 'rb') as weights_file:
+            model_dump = weights_file.read()
+        jdata = {
+            'seq_len': self.seq_len,
+            'min_freq': self.min_freq,
+            'model': model_dump,
+            'vocab': self.vocab,
+            'meanings': [{
+                    'id': x.meaning_id,
+                    'en': x.en,
+                    'ru': x.ru
+                } for x in self.meanings
+            ]
+        }
+        shutil.rmtree(model_filename)
+        with open(model_filename, 'w') as f:
+            json.dump(jdata, f)
+
+    @staticmethod
+    def load(filename):
+        with open(filename, 'r') as f:
+            jdata = json.load(f)
+        self = NeuralPredict(jdata['min_freq'], jdata['seq_len'])
+        self.vocab = jdata['vocab']
+        self.meanings = [Meaning(x['id'], x['en'], x['ru']) for x in jdata['meanings']]
+        model_dump = jdata['model']
+        with tempfile.NamedTemporaryFile('wb') as f:
+            f.write(model_dump)
+            self.model = load_model(f.name)
+        return self
 
 
 def main(args):
@@ -119,6 +156,7 @@ def main(args):
     model.train(args.train, args)
     log.info('Saving model to %s...' % args.model)
     model.save(args.model)
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()

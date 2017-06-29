@@ -26,7 +26,7 @@ log = init_logging()
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-class Word(object):
+class Meaning(object):
     __slots__ = ['meaning_id', 'en', 'ru']
 
     def __init__(self, meaning_id, en, ru):
@@ -67,11 +67,11 @@ class Word(object):
 
 
 class AddedWord(object):
-    __slots__ = ['user_id', 'word', 'creation_time', 'source']
+    __slots__ = ['user_id', 'meaning', 'creation_time', 'source']
 
     def __init__(self, user_id, meaning_id, creation_time, source, en, ru):
         self.user_id = int(user_id)
-        self.word = Word(int(meaning_id), en, ru)
+        self.meaning = Meaning(int(meaning_id), en, ru)
         self.creation_time = datetime.strptime(creation_time, DATE_FORMAT)
         self.source = source
 
@@ -97,3 +97,5 @@ class AddedWord(object):
 
     def __repr__(self):
         return str(self)
+
+

@@ -6,24 +6,24 @@ import cPickle
 
 
 class Stats(object):
-    __slots__ = ['count', 'words', 'word']
+    __slots__ = ['count', 'meanings', 'word']
 
     def __getstate__(self):
-        return self.count, self.words, self.word
+        return self.count, self.meanings, self.word
 
     def __setstate__(self, state):
-        count, words, word = state
+        count, meanings, word = state
         self.count = count
-        self.words = words
+        self.meanings = meanings
         self.word = word
 
     def __init__(self, word):
         self.count = 1
-        self.words = defaultdict(int)
+        self.meanings = defaultdict(int)
         self.word = word
 
-    def add(self, word):
-        self.words[word] += 1
+    def add(self, meaning):
+        self.meanings[meaning] += 1
 
 
 class CollabPredict(object):
@@ -43,17 +43,17 @@ class CollabPredict(object):
         keys_to_delete = []
 
         for key, stat in self.word_dict.iteritems():
-            words_to_delete = []
+            meanings_to_delete = []
             if stat.count < self.min_self_count:
                 keys_to_delete.append(key)
                 continue
 
-            for word, count in stat.words.iteritems():
+            for meaning, count in stat.meanings.iteritems():
                 if count < self.min_hypo_count:
-                    words_to_delete.append(word)
-            for word in words_to_delete:
-                del stat.words[word]
-            if len(stat.words) < 1:
+                    meanings_to_delete.append(meaning)
+            for meaning in meanings_to_delete:
+                del stat.meanings[meaning]
+            if len(stat.meanings) < 1:
                 keys_to_delete.append(key)
                 continue
 
@@ -61,12 +61,12 @@ class CollabPredict(object):
             del self.word_dict[key]
 
         for key, stat in self.word_dict.iteritems():
-            words_to_delete = []
-            for word in stat.words:
-                if word.en not in self.word_dict:
-                    words_to_delete.append(word)
-            for word in words_to_delete:
-                del stat.words[word]
+            meanings_to_delete = []
+            for meaning in stat.meanings:
+                if meaning.en not in self.word_dict:
+                    meanings_to_delete.append(meaning)
+            for meaning in meanings_to_delete:
+                del stat.words[meaning]
 
     @staticmethod
     def load(filename):
@@ -79,7 +79,7 @@ class CollabPredict(object):
 
     def init_from_file(self, file):
         prev_user = None
-        words = []
+        meanings = []
 
         for i, line in enumerate(file):
             if (i + 1) % 100000 == 0:
@@ -87,48 +87,41 @@ class CollabPredict(object):
             parsed = AddedWord.parse(line)
             if not parsed or not parsed.source.startswith('search_'):
                 continue
-            word = parsed.word
+            meaning = parsed.meaning
             if prev_user is None:
-                words = [word]
+                meanings = [meaning]
                 prev_user = parsed.user_id
                 continue
 
             if parsed.user_id != prev_user:
-                self.append_word_pairs(words)
+                self.append_word_pairs(meanings)
                 prev_user = parsed.user_id
-                words = []
-            words.append(word)
+                meanings = []
+            meanings.append(meaning)
 
-        if len(words) > 0:
-            self.append_word_pairs(words)
+        if len(meanings) > 0:
+            self.append_word_pairs(meanings)
 
-    def append_to_word_dict(self, word1, word2):
-        if word1 in self.word_dict:
-            stat = self.word_dict[word1.en]
-        else:
-            stat = Stats(word1)
-        stat.add(word2)
-
-    def append_word_pairs(self, words):
+    def append_word_pairs(self, meanings):
         self.total_users += 1
 
-        words = words[:100]
+        meanings = meanings[:100]
 
-        for word in words:
-            if word.en in self.word_dict:
-                stat = self.word_dict[word.en]
+        for meaning in meanings:
+            if meaning.en in self.word_dict:
+                stat = self.word_dict[meaning.en]
                 stat.count += 1
             else:
-                stat = Stats(word)
-                self.word_dict[word.en] = stat
+                stat = Stats(meaning.en)
+                self.word_dict[meaning.en] = stat
 
-        for i in xrange(len(words)):
-            word1 = words[i]
-            for k in xrange(i + 1, len(words)):
+        for i in xrange(len(meanings)):
+            meaning1 = meanings[i]
+            for k in xrange(i + 1, len(meanings)):
                 assert k > i
-                word2 = words[k]
-                self.word_dict[word1.en].add(word2)
-                self.word_dict[word2.en].add(word1)
+                meaning2 = meanings[k]
+                self.word_dict[meaning1.en].add(meaning2)
+                self.word_dict[meaning2.en].add(meaning1)
 
     def predict(self, seed, max_hypos):
         scores = defaultdict(float)
@@ -136,12 +129,12 @@ class CollabPredict(object):
             if word not in self.word_dict:
                 continue
             stat = self.word_dict[word]
-            for hypo in stat.words:
+            for hypo in stat.meanings:
                 hypo_stat = self.word_dict[hypo.en]
-                if hypo_stat.count < 10 or stat.words[hypo] < 5:
+                if hypo_stat.count < 10 or stat.meanings[hypo] < 5:
                     continue
                 y = hypo_stat.count * 1.0 / self.total_users
-                cond_y = stat.words[hypo] * 1.0 / stat.count
+                cond_y = stat.meanings[hypo] * 1.0 / stat.count
                 score = np.log(cond_y/y) * np.log(hypo_stat.count)
                 scores[hypo] += score
 
