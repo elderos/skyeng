@@ -88,9 +88,9 @@ class NeuralPredict(object):
             words = list(added_words)
             if len(words) < 6:
                 continue
-            if len(words) > 100:
-                words = words[-100:]
-            for i in xrange(5, len(words)):
+            if len(words) > self.seq_len + 5:
+                words = words[-(self.seq_len + 5):]
+            for i in xrange(len(words) - 5, len(words)):
                 seeds = [x.meaning.en for x in words[max(0, i - self.seq_len):i]]
                 x_vec = self.make_input_vector(seeds)
                 X.append(x_vec)
