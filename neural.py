@@ -133,12 +133,12 @@ class NeuralPredict(object):
         }
         os.remove(model_filename)
         with open(model_filename, 'w') as f:
-            json.dump(jdata, f)
+            f.write(json.dumps(jdata, ensure_ascii=False))
 
     @staticmethod
     def load(filename):
         with open(filename, 'r') as f:
-            jdata = json.load(f)
+            jdata = json.loads(f.read())
         self = NeuralPredict(jdata['min_freq'], jdata['seq_len'])
         self.vocab = jdata['vocab']
         self.meanings = [Meaning(x['id'], x['en'], x['ru']) for x in jdata['meanings']]
