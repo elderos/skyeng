@@ -124,19 +124,27 @@ class NeuralPredict(object):
         self.model = self.build_model()
 
         signal.signal(signal.SIGINT, on_sigint)
+        batch_no = 0
         for epoch, X, Y in self.batch_generator(args.gen_batch_size):
             if sigint_pressed:
                 log.info('Stop training due to SIGINT catched.')
                 break
             if epoch >= args.epochs:
                 break
-            self.model.fit(
+            history = self.model.fit(
                 X, Y,
                 batch_size=args.batch_size,
                 epochs=1,
                 validation_split=0.2,
                 initial_epoch=epoch
             )
+            log.info('Epoch #%s, batch #%s: training loss %s | validate loss %s' % (
+                epoch,
+                batch_no,
+                history.history['loss'][-1],
+                history.history['val_loss'][-1]
+            ))
+            batch_no += 1
 
 
     def save(self, model_filename):
