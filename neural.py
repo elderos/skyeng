@@ -81,8 +81,9 @@ class NeuralPredict(object):
     def fill_input_vectors(self, seeds_arr, batch_arr, offset):
         for i, seeds in enumerate(seeds_arr):
             batch_arr[offset + i] *= 0
-            for k in xrange(min([self.seq_len, len(seeds)])):
-                seed = seeds[k]
+            seed_num = min([self.seq_len, len(seeds)])
+            for k in xrange(seed_num):
+                seed = seeds[-seed_num + k]
                 batch_arr[offset + i][k] = self.vocab_index(seed)
 
     def batch_generator(self, batch_size):
@@ -91,7 +92,7 @@ class NeuralPredict(object):
         self.added_words.sort(key=lambda x: (x.user_id, x.creation_time))
         epoch = 0
         log.info('Grouping by user')
-        users = [list(x[1]) for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
+        users = [list(x[1][-500:]) for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
         log.info('Allocating buffers')
         X = np.ndarray(shape=(batch_size, self.seq_len), dtype=np.uint32)
         Y = np.ndarray(shape=(batch_size, len(self.meanings)), dtype=np.float32)
