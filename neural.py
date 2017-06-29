@@ -133,7 +133,7 @@ class NeuralPredict(object):
         }
         os.remove(model_filename)
         with open(model_filename, 'w') as f:
-            f.write(json.dumps(jdata, ensure_ascii=False))
+            f.write(json.dumps(jdata, ensure_ascii=False, indent=4))
 
     @staticmethod
     def load(filename):
