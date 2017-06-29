@@ -92,7 +92,7 @@ class NeuralPredict(object):
         self.added_words.sort(key=lambda x: (x.user_id, x.creation_time))
         epoch = 0
         log.info('Grouping by user')
-        users = [list(x[1][-500:]) for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
+        users = [list(x[1])[-500:] for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
         log.info('Allocating buffers')
         X = np.ndarray(shape=(batch_size, self.seq_len), dtype=np.uint32)
         Y = np.ndarray(shape=(batch_size, len(self.meanings)), dtype=np.float32)
