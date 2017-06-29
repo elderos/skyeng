@@ -46,7 +46,7 @@ class NeuralPredict(object):
             for i, line in enumerate(f):
                 if (i + 1) % 100000 == 0:
                     log.info('%s lines done.' % (i + 1))
-                    break
+                    # break
                 added_word = AddedWord.parse(line)
                 if not added_word.source.startswith('search_'):
                     continue
