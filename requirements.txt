@@ -1,0 +1,7 @@
+h5py >= 2.7.0
+keras >= 2.0.5
+numpy >= 1.13.0
+ujson >= 1.35
+cherrypy >= 5.4.0
+cherrypy-cors >= 1.5
+tensorflow >= 1.0.1

@@ -11,6 +11,7 @@ import ujson as json
 import tempfile
 import gc
 import os
+from base64 import b64encode, b64decode
 
 class NeuralPredict(object):
     def __init__(self, min_freq, seq_len):
@@ -69,10 +70,10 @@ class NeuralPredict(object):
     def make_input_vector(self, seeds):
         indexes = [self.vocab_index(x) for x in seeds]
         indexes = [x for x in indexes if x > 0]
-        indexes = indexes[:30]
+        indexes = indexes[-self.seq_len:]
         seeds_vec = np.zeros(self.seq_len, dtype=np.uint32)
         seeds_vec[0:len(indexes)] = indexes
-        return seeds_vec
+        return seeds_vec.reshape(self.seq_len)
 
     def make_dataset(self):
         X, Y = [], []
@@ -94,10 +95,10 @@ class NeuralPredict(object):
 
                 y_index = bisect_left(self.meanings, words[i].meaning)
                 assert self.meanings[y_index] == words[i].meaning
-                target = to_categorical(y_index, num_classes=len(self.meanings)).reshape(len(self.meanings))
+                target = to_categorical(y_index, num_classes=len(self.meanings))
                 Y.append(target)
         log.info('Total %s examples' % len(X))
-        return np.array(X), np.array(Y)
+        return np.array(X).reshape((len(X), self.seq_len)), np.array(Y).reshape((len(X), len(self.meanings)))
 
     def train(self, train_file, args):
         self.read_vocabs(train_file)
@@ -122,7 +123,7 @@ class NeuralPredict(object):
         jdata = {
             'seq_len': self.seq_len,
             'min_freq': self.min_freq,
-            'model': model_dump,
+            'model': b64encode(model_dump),
             'vocab': self.vocab,
             'meanings': [{
                     'id': x.meaning_id,
@@ -140,13 +141,36 @@ class NeuralPredict(object):
         with open(filename, 'r') as f:
             jdata = json.loads(f.read())
         self = NeuralPredict(jdata['min_freq'], jdata['seq_len'])
-        self.vocab = jdata['vocab']
-        self.meanings = [Meaning(x['id'], x['en'], x['ru']) for x in jdata['meanings']]
-        model_dump = jdata['model']
+        self.vocab = [x.encode('utf-8') for x in jdata['vocab']]
+        self.meanings = [Meaning(x['id'], x['en'].encode('utf-8'), x['ru'].encode('utf-8')) for x in jdata['meanings']]
+        model_dump = b64decode(jdata['model'])
         with tempfile.NamedTemporaryFile('wb') as f:
             f.write(model_dump)
+            f.flush()
             self.model = load_model(f.name)
         return self
+
+    def predict(self, seeds, max_hypos):
+        seed_vec = self.make_input_vector(seeds)
+        X = np.array(seed_vec).reshape((1, self.seq_len))
+        output = self.model.predict(X)[0]
+        expect_count = len(seeds) + max_hypos
+
+        seeds = set(seeds)
+
+        indexes = np.argpartition(output, -expect_count)[-expect_count:]
+        result_items = list([{'word': self.meanings[i], 'score': output[i]} for i in indexes])
+        result_items.sort(key=lambda x: x['score'], reverse=True)  # sort by score
+        res = []
+        for item in result_items:
+            meaning = item['word']
+            score = item['score']
+            if meaning.en in seeds:
+                continue
+            res.append({'word': meaning, 'score': float(score)})
+            if len(res) >= max_hypos:
+                break
+        return res
 
 
 def main(args):

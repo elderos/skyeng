@@ -140,12 +140,12 @@ class CollabPredict(object):
 
         max_hypos = int(max_hypos)
         res = []
-        for word, score in sorted(scores.items(), key=lambda (w, s): s, reverse=True):
-            if word.en in seed:
+        for meaning, score in sorted(scores.items(), key=lambda (w, s): s, reverse=True):
+            if meaning.en in seed:
                 continue
             if len(res) >= max_hypos:
                 break
-            res.append({'word': word, 'score': score})
+            res.append({'word': meaning, 'score': score})
         return res
 
 
