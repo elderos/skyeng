@@ -12,13 +12,10 @@ from neural import NeuralPredict
 class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
-        try:
-            self.methods = {
-                'collab': CollabPredict.load('collab.model'),
-                'neural': NeuralPredict.load('neural.model')
-            }
-        except Exception as e:
-            cherrypy.log(e)
+        self.methods = {
+            'collab': CollabPredict.load('collab.model'),
+            'neural': NeuralPredict.load('neural.model')
+        }
 
     @cherrypy.expose
     def index(self):
