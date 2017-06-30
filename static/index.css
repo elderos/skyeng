@@ -34,6 +34,11 @@ body {
 .section-container {
     margin-top: 20px;
     border-top: dashed black 2px;
+    padding-top: 5px;
+}
+
+.section-title {
+    font-size: 24pt;
 }
 
 .word-container {
