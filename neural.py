@@ -43,6 +43,8 @@ class NeuralPredict(object):
                 input_length=self.seq_len,
                 mask_zero=True,
             ),
+            GRU(40, return_sequences=True),
+            GRU(40, return_sequences=True),
             GRU(40, return_sequences=False),
             Dense(len(self.meanings), activation='softmax')
         ])
@@ -100,8 +102,8 @@ class NeuralPredict(object):
         Y = np.ndarray(shape=(batch_size, len(self.meanings)), dtype=np.float32)
         X_pos = 0
         log.info('Start filling buffers')
+        random.shuffle(users)
         while True:
-            random.shuffle(users)
             for added_words in users:
                 words = added_words
                 if len(words) < 6:
@@ -118,6 +120,9 @@ class NeuralPredict(object):
                     if X_pos >= len(X):
                         yield epoch, X, Y
                         X_pos = 0
+            if X_pos > 0:
+                yield epoch, X[0:X_pos], Y[0:X_pos]
+                X_pos = 0
 
             epoch += 1
 

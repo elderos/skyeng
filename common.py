@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-
+import ujson as json
 
 def init_logging():
     formatter = logging.Formatter('%(asctime)s %(message)s')
@@ -70,17 +70,23 @@ class AddedWord(object):
     __slots__ = ['user_id', 'meaning', 'creation_time', 'source']
 
     def __init__(self, user_id, meaning_id, creation_time, source, en, ru):
-        self.user_id = int(user_id)
-        self.meaning = Meaning(int(meaning_id), en, ru)
+        self.user_id = user_id
+        self.meaning = Meaning(meaning_id, en, ru)
         self.creation_time = datetime.strptime(creation_time, DATE_FORMAT)
         self.source = source
 
     @staticmethod
     def parse(line):
-        columns = line.rstrip().split('\t')
-        if len(columns) != 6:
-            return None
-        return AddedWord(*columns)
+        jdata = json.loads(line)
+
+        return AddedWord(
+            jdata['user_id'],
+            jdata['meaning_id'],
+            jdata['creation_time'],
+            jdata['source'].encode('utf-8'),
+            jdata['en'].encode('utf-8'),
+            jdata['ru'].encode('utf-8')
+        )
 
     def validate(self):
         return self.user_id
