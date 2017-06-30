@@ -1,6 +1,9 @@
 from argparse import ArgumentParser
 from collections import defaultdict
 import itertools as it
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 from common import AddedWord, log, Meaning
 from keras.models import Sequential, load_model
 from keras.layers import Embedding, Dense, GRU
@@ -9,7 +12,6 @@ from keras.callbacks import Progbar, ProgbarLogger
 import numpy as np
 import ujson as json
 import tempfile
-import os
 from base64 import b64encode, b64decode
 import random
 import signal
