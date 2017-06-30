@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from common import log
+log.info('Hello there')
+
+
 from argparse import ArgumentParser
 import cherrypy
 from cherrypy.lib.static import serve_file
@@ -8,6 +12,9 @@ import ujson as json
 from collab import CollabPredict, Stats
 import cherrypy_cors
 from neural import NeuralPredict
+
+
+
 
 class WordPredict(object):
     def __init__(self):
