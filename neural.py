@@ -2,7 +2,9 @@ from argparse import ArgumentParser
 from collections import defaultdict
 import itertools as it
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 from common import AddedWord, log, Meaning
 from keras.models import Sequential, load_model

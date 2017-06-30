@@ -4,6 +4,9 @@ from argparse import ArgumentParser
 import cherrypy
 from cherrypy.lib.static import serve_file
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import ujson as json
 from collab import CollabPredict, Stats
 import cherrypy_cors
