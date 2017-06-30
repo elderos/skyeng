@@ -188,12 +188,13 @@ class NeuralPredict(object):
 
     def predict(self, seeds, max_hypos):
         seed_vec = np.ndarray(shape=(1, self.seq_len))
+        seeds = list([x.encode('utf-8') for x in set(seeds)])
         self.fill_input_vectors([seeds], seed_vec, 0)
         with self.graph.as_default():
             output = self.model.predict(seed_vec)[0]
         expect_count = len(seeds) + max_hypos
 
-        seeds = set(seeds)
+
 
         indexes = np.argpartition(output, -expect_count)[-expect_count:]
         result_items = list([{'word': self.meanings[i], 'score': output[i]} for i in indexes])
