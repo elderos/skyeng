@@ -229,7 +229,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--epochs', default=10, type=int)
     parser.add_argument('-b', '--batch-size', default=1000, type=int)
     parser.add_argument('-g', '--gen-batch-size', default=10000, type=int, help='Batch size for dataset generator')
-    parser.add_argument('-t', '--train', default='user_words_train.tsv')
+    parser.add_argument('-t', '--train', default='user_words_train.json')
     parser.add_argument('-m', '--model', default='neural.model')
     args = parser.parse_args()
 

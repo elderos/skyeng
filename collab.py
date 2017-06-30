@@ -157,7 +157,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('-t', '--train', default='user_words_train.tsv')
+    parser.add_argument('-t', '--train', default='user_words_train.json')
     parser.add_argument('-m', '--model', default='collab.model')
     args = parser.parse_args()
 
