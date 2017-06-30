@@ -5,8 +5,8 @@ from common import AddedWord, log, Meaning
 from keras.models import Sequential, load_model
 from keras.layers import Embedding, Dense, GRU
 from bisect import bisect_left
+from keras.callbacks import Progbar, ProgbarLogger
 import numpy as np
-from keras.utils import to_categorical
 import ujson as json
 import tempfile
 import os
@@ -136,14 +136,17 @@ class NeuralPredict(object):
                 batch_size=args.batch_size,
                 epochs=1,
                 validation_split=0.2,
-                initial_epoch=epoch
+                # initial_epoch=epoch,
             )
-            log.info('Epoch #%s, batch #%s: training loss %s | validate loss %s' % (
-                epoch,
-                batch_no,
-                history.history['loss'][-1],
-                history.history['val_loss'][-1]
-            ))
+            if 'loss' in history.history and 'val_loss' in history.history:
+                log.info('Epoch #%s, batch #%s: training loss %s | validate loss %s' % (
+                    epoch,
+                    batch_no,
+                    history.history['loss'][-1],
+                    history.history['val_loss'][-1]
+                ))
+            else:
+                log.info(str(history.history.keys()))
             batch_no += 1
 
 
