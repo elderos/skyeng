@@ -66,7 +66,7 @@ class CollabPredict(object):
                 if meaning.en not in self.word_dict:
                     meanings_to_delete.append(meaning)
             for meaning in meanings_to_delete:
-                del stat.words[meaning]
+                del stat.meanings[meaning]
 
     @staticmethod
     def load(filename):

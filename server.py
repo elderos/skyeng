@@ -7,13 +7,14 @@ import os
 import ujson as json
 from collab import CollabPredict, Stats
 import cherrypy_cors
-
+from neural import NeuralPredict
 
 class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
         self.methods = {
             'collab': CollabPredict.load('collab.model'),
+            'neural': NeuralPredict.load('neural.model')
         }
 
     @cherrypy.expose
