@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 import ujson as json
 import sys
 from common import DATE_FORMAT
-from
 
 def main(args):
     for line in sys.stdin:
