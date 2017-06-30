@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-from common import log
-log.info('Hello there')
-
-
 from argparse import ArgumentParser
 import cherrypy
 from cherrypy.lib.static import serve_file
@@ -13,16 +9,16 @@ from collab import CollabPredict, Stats
 import cherrypy_cors
 from neural import NeuralPredict
 
-
-
-
 class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
-        self.methods = {
-            'collab': CollabPredict.load('collab.model'),
-            'neural': NeuralPredict.load('neural.model')
-        }
+        try:
+            self.methods = {
+                'collab': CollabPredict.load('collab.model'),
+                'neural': NeuralPredict.load('neural.model')
+            }
+        except Exception as e:
+            cherrypy.log(e)
 
     @cherrypy.expose
     def index(self):
