@@ -13,6 +13,7 @@ import os
 from base64 import b64encode, b64decode
 import random
 import signal
+import tensorflow as tf
 
 
 sigint_pressed = False
@@ -32,6 +33,7 @@ class NeuralPredict(object):
         self.min_freq = min_freq
         self.seq_len = seq_len
         self.model = None
+        self.graph = tf.get_default_graph()
 
     def build_model(self):
         model = Sequential([
@@ -187,7 +189,8 @@ class NeuralPredict(object):
     def predict(self, seeds, max_hypos):
         seed_vec = np.ndarray(shape=(1, self.seq_len))
         self.fill_input_vectors([seeds], seed_vec, 0)
-        output = self.model.predict(seed_vec)[0]
+        with self.graph.as_default():
+            output = self.model.predict(seed_vec)[0]
         expect_count = len(seeds) + max_hypos
 
         seeds = set(seeds)
