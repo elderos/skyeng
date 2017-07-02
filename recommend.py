@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v',
         '--validate',
-        default='user_words_validate.tsv',
+        default='user_words_validate.json',
         metavar='FILE',
         help='Validate file (default: user_words_validate.tsv)'
     )

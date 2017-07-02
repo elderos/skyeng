@@ -5,12 +5,12 @@ import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from common import AddedWord, log, Meaning
 from keras.models import Sequential, load_model
-from keras.layers import Embedding, Dense, GRU
+from keras.layers import Embedding, Dense, GRU, LSTM
 from bisect import bisect_left
-from keras.callbacks import Progbar, ProgbarLogger
 import numpy as np
 import ujson as json
 import tempfile
@@ -47,14 +47,12 @@ class NeuralPredict(object):
                 input_length=self.seq_len,
                 mask_zero=True,
             ),
-            GRU(40, return_sequences=True),
-            GRU(40, return_sequences=True),
-            GRU(40, return_sequences=False),
+            LSTM(100, return_sequences=False),
             Dense(len(self.meanings), activation='softmax')
         ])
 
         model.summary()
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+        model.compile(optimizer='nadam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
 
     def read_vocabs(self, train_file):
@@ -65,7 +63,7 @@ class NeuralPredict(object):
             for i, line in enumerate(f):
                 if (i + 1) % 1000000 == 0:
                     log.info('%sM lines done.' % ((i + 1)/1000000))
-                    #break
+                    # break
                 added_word = AddedWord.parse(line)
                 if not added_word.source.startswith('search_'):
                     continue
@@ -100,10 +98,10 @@ class NeuralPredict(object):
         self.added_words.sort(key=lambda x: (x.user_id, x.creation_time))
         epoch = 0
         log.info('Grouping by user')
-        users = [list(x[1])[-500:] for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
+        users = [list(x[1]) for x in it.groupby(self.added_words, key=lambda x: x.user_id)]
         log.info('Allocating buffers')
-        X = np.ndarray(shape=(batch_size, self.seq_len), dtype=np.uint32)
-        Y = np.ndarray(shape=(batch_size, len(self.meanings)), dtype=np.float32)
+        X = np.ndarray(shape=(batch_size, self.seq_len), dtype=np.int32)
+        Y = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
         X_pos = 0
         log.info('Start filling buffers')
         random.shuffle(users)
@@ -118,7 +116,7 @@ class NeuralPredict(object):
                     y_index = bisect_left(self.meanings, words[i].meaning)
                     assert self.meanings[y_index] == words[i].meaning
                     Y[X_pos] *= 0
-                    Y[X_pos][y_index] = 1.0
+                    Y[X_pos][0] = y_index
                     X_pos += 1
 
                     if X_pos >= len(X):
@@ -136,7 +134,21 @@ class NeuralPredict(object):
 
         signal.signal(signal.SIGINT, on_sigint)
         batch_no = 0
+        epoch_train_losses = []
+        epoch_val_losses = []
+        prev_epoch = None
         for epoch, X, Y in self.batch_generator(args.gen_batch_size):
+            if prev_epoch is not None and prev_epoch != epoch:
+                avg_train = np.average(epoch_train_losses)
+                avg_val = np.average(epoch_val_losses)
+                log.info('Average epoch losses:')
+                log.info('Train:\t%.6f' % avg_train)
+                log.info('Val:\t%.6f' % avg_val)
+                epoch_train_losses = []
+                epoch_val_losses = []
+
+            prev_epoch = epoch
+
             if sigint_pressed:
                 log.info('Stop training due to SIGINT catched.')
                 break
@@ -147,6 +159,7 @@ class NeuralPredict(object):
                 batch_size=args.batch_size,
                 epochs=1,
                 validation_split=0.2,
+                shuffle=False,
                 # initial_epoch=epoch,
             )
             if 'loss' in history.history and 'val_loss' in history.history:
@@ -156,6 +169,8 @@ class NeuralPredict(object):
                     history.history['loss'][-1],
                     history.history['val_loss'][-1]
                 ))
+                epoch_train_losses.append(history.history['loss'][-1])
+                epoch_val_losses.append(history.history['val_loss'][-1])
             else:
                 log.info(str(history.history.keys()))
             batch_no += 1
@@ -197,7 +212,7 @@ class NeuralPredict(object):
 
     def predict(self, seeds, max_hypos):
         seed_vec = np.ndarray(shape=(1, self.seq_len))
-        seeds = list([x.encode('utf-8') for x in set(seeds)])
+        seeds = list(set([x for x in seeds]))
         self.fill_input_vectors([seeds], seed_vec, 0)
         with self.graph.as_default():
             output = self.model.predict(seed_vec)[0]
