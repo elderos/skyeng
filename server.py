@@ -26,7 +26,7 @@ class WordPredict(object):
 
     @cherrypy.expose
     def get_predicted_words(self, seeds):
-        jdata = json.loads(seeds)
+        jdata = [x.encode('utf-8') for x in json.loads(seeds)]
         res = []
         for method_name, method in self.methods.items():
             res.append({
