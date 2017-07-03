@@ -46,8 +46,9 @@ class NeuralPredict(object):
                 output_dim=100,
                 input_length=self.seq_len,
                 mask_zero=True,
+                embeddings_regularizer='l2'
             ),
-            LSTM(100, return_sequences=False),
+            LSTM(100, return_sequences=False, activity_regularizer='l2'),
             Dense(len(self.meanings), activation='softmax')
         ])
 
@@ -136,16 +137,24 @@ class NeuralPredict(object):
         batch_no = 0
         epoch_train_losses = []
         epoch_val_losses = []
+        epoch_acc = []
+        epoch_val_acc = []
         prev_epoch = None
         for epoch, X, Y in self.batch_generator(args.gen_batch_size):
             if prev_epoch is not None and prev_epoch != epoch:
                 avg_train = np.average(epoch_train_losses)
                 avg_val = np.average(epoch_val_losses)
+                avg_train_acc = np.average(epoch_acc)
+                avg_val_acc = np.average(epoch_val_acc)
                 log.info('Average epoch losses:')
                 log.info('Train:\t%.6f' % avg_train)
                 log.info('Val:\t%.6f' % avg_val)
+                log.info('Train acc:\t%.2f' % avg_train_acc)
+                log.info('Val acc:\t%.2f' % avg_val_acc)
                 epoch_train_losses = []
                 epoch_val_losses = []
+                epoch_acc = []
+                epoch_val_acc = []
 
             prev_epoch = epoch
 
@@ -171,6 +180,8 @@ class NeuralPredict(object):
                 ))
                 epoch_train_losses.append(history.history['loss'][-1])
                 epoch_val_losses.append(history.history['val_loss'][-1])
+                epoch_acc.append(history.history['acc'][-1])
+                epoch_val_acc.append(history.history['val_acc'][-1])
             else:
                 log.info(str(history.history.keys()))
             batch_no += 1
