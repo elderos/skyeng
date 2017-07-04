@@ -48,7 +48,7 @@ class NeuralPredict(object):
                 mask_zero=True,
                 embeddings_regularizer='l2'
             ),
-            LSTM(100, return_sequences=False, activity_regularizer='l2'),
+            GRU(100, return_sequences=False, activity_regularizer='l2'),
             Dense(len(self.meanings), activation='softmax')
         ])
 
@@ -66,8 +66,8 @@ class NeuralPredict(object):
                     log.info('%sM lines done.' % ((i + 1)/1000000))
                     # break
                 added_word = AddedWord.parse(line)
-                if not added_word.source.startswith('search_'):
-                    continue
+                # if not added_word.source.startswith('search_'):
+                #     continue
                 self.added_words.append(added_word)
                 words[added_word.meaning.en] += 1
                 meanings.add(added_word.meaning)
@@ -149,12 +149,13 @@ class NeuralPredict(object):
                 log.info('Average epoch losses:')
                 log.info('Train:\t%.6f' % avg_train)
                 log.info('Val:\t%.6f' % avg_val)
-                log.info('Train acc:\t%.2f' % avg_train_acc)
-                log.info('Val acc:\t%.2f' % avg_val_acc)
+                log.info('Train acc:\t%.6f' % avg_train_acc)
+                log.info('Val acc:\t%.6f' % avg_val_acc)
                 epoch_train_losses = []
                 epoch_val_losses = []
                 epoch_acc = []
                 epoch_val_acc = []
+                batch_no = 0
 
             prev_epoch = epoch
 
@@ -169,14 +170,17 @@ class NeuralPredict(object):
                 epochs=1,
                 validation_split=0.2,
                 shuffle=False,
+                verbose=0
                 # initial_epoch=epoch,
             )
-            if 'loss' in history.history and 'val_loss' in history.history:
-                log.info('Epoch #%s, batch #%s: training loss %s | validate loss %s' % (
+            if 'loss' in history.history and 'val_loss' in history.history:                
+                log.info('Epoch #%s, batch #%s: training loss %.6f | acc %.6f || val loss %.6f | acc %.6f' % (
                     epoch,
                     batch_no,
                     history.history['loss'][-1],
-                    history.history['val_loss'][-1]
+                    history.history['acc'][-1],
+                    history.history['val_loss'][-1],
+                    history.history['val_acc'][-1]
                 ))
                 epoch_train_losses.append(history.history['loss'][-1])
                 epoch_val_losses.append(history.history['val_loss'][-1])
