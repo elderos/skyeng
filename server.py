@@ -37,7 +37,7 @@ class WordPredict(object):
                         'en': x['word'].en,
                         'ru': x['word'].ru,
                         'score': x['score']
-                    } for x in method.predict(jdata, 30)
+                    } for x in method.predict(jdata, 15)
                     ]
             })
         return json.dumps(res)
