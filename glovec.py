@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import nmslib
 import numpy as np
-from common import log
+from common import log, Meaning
 from collections import defaultdict
 
 class GlovePredict(object):
@@ -42,11 +42,8 @@ class GlovePredict(object):
         reduced.sort(key=lambda x: x[1])
 
         res = [{
-            'word': {
-                'meaning_id': 0,
-                'en': word,
-                'ru': ''
-            }, 'score': float(score)
+            'word': Meaning(0, word, ''),
+            'score': float(score)
         } for word, score in reduced[:count]
         ]
 
