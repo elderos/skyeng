@@ -19,6 +19,7 @@ import random
 import signal
 import tensorflow as tf
 
+random.seed = 100500
 
 sigint_pressed = False
 
@@ -36,8 +37,8 @@ class NeuralPredict(object):
         self.added_words = []
         self.min_freq = min_freq
         self.seq_len = seq_len
-        self.model = None
         self.graph = tf.get_default_graph()
+        self.model = self.build_model()
 
     def build_model(self):
         model = Sequential([
@@ -131,7 +132,6 @@ class NeuralPredict(object):
 
     def train(self, train_file, args):
         self.read_vocabs(train_file)
-        self.model = self.build_model()
 
         signal.signal(signal.SIGINT, on_sigint)
         batch_no = 0
@@ -233,8 +233,6 @@ class NeuralPredict(object):
             output = self.model.predict(seed_vec)[0]
         expect_count = len(seeds) + max_hypos
 
-
-
         indexes = np.argpartition(output, -expect_count)[-expect_count:]
         result_items = list([{'word': self.meanings[i], 'score': output[i]} for i in indexes])
         result_items.sort(key=lambda x: x['score'], reverse=True)  # sort by score
@@ -252,7 +250,11 @@ class NeuralPredict(object):
 
 def main(args):
     log.info('Training predict (input: %s)' % args.train)
-    model = NeuralPredict(3, 30)
+    if args.preload:
+        model = NeuralPredict.load(args.preload)
+    else:
+        model = NeuralPredict(3, 30)
+
     model.train(args.train, args)
     log.info('Saving model to %s...' % args.model)
     model.save(args.model)
@@ -264,7 +266,9 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', default=1000, type=int)
     parser.add_argument('-g', '--gen-batch-size', default=10000, type=int, help='Batch size for dataset generator')
     parser.add_argument('-t', '--train', default='user_words_train.json')
+
     parser.add_argument('-m', '--model', default='neural.model')
+    parser.add_argument('-p', '--preload', help='Preload trained model')
     args = parser.parse_args()
 
     main(args)
