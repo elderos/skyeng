@@ -38,7 +38,7 @@ class NeuralPredict(object):
         self.min_freq = min_freq
         self.seq_len = seq_len
         self.graph = tf.get_default_graph()
-        self.model = self.build_model()
+        self.model = None
 
     def build_model(self):
         model = Sequential([
@@ -136,6 +136,8 @@ class NeuralPredict(object):
 
     def train(self, train_file, args):
         self.read_vocabs(train_file)
+        if not self.model:
+            self.model = self.build_model()
 
         signal.signal(signal.SIGINT, on_sigint)
         batch_no = 0
