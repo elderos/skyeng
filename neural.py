@@ -9,7 +9,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from common import AddedWord, log, Meaning
 from keras.models import Sequential, load_model
-from keras.layers import Embedding, Dense, GRU, LSTM
+from keras.layers import Embedding, Dense, GRU, Dropout
 from bisect import bisect_left
 import numpy as np
 import ujson as json
@@ -44,12 +44,16 @@ class NeuralPredict(object):
         model = Sequential([
             Embedding(
                 input_dim=len(self.vocab) + 1,
-                output_dim=100,
+                output_dim=200,
                 input_length=self.seq_len,
                 mask_zero=True,
                 embeddings_regularizer='l2'
             ),
-            GRU(100, return_sequences=False, activity_regularizer='l2'),
+            Dropout(0.2),
+            GRU(200, return_sequences=False, activity_regularizer='l2'),
+            Dropout(0.2),
+            Dense(250, activity_regularizer='l2'),
+            Dropout(0.2),
             Dense(len(self.meanings), activation='softmax')
         ])
 
