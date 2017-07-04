@@ -31,7 +31,7 @@ class GlovePredict(object):
         return word
 
     def is_bad_word(self, word):
-        return re.match(r'[\d%s]' % re.escape(string.punctuation), word, flags=re.U)
+        return re.match('[\d%s]' % re.escape(string.punctuation), word, flags=re.U)
 
     def predict(self, seeds, count=30):
         seeds = set([x for x in seeds])
