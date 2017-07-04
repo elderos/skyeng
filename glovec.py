@@ -3,6 +3,9 @@ import nmslib
 import numpy as np
 from common import log, Meaning
 from collections import defaultdict
+import re
+import string
+
 
 class GlovePredict(object):
     def __init__(self, filename):
@@ -20,8 +23,18 @@ class GlovePredict(object):
         self.index.createIndex({'post': 2}, print_progress=True)
         log.info('Total %s words' % len(self.words))
 
+    def strip_siffixes(self, word):
+        for suf in ['ing', 'ed', 's']:
+            if not word.endswith(suf):
+                continue
+            return word[:-len(suf)]
+        return word
+
+    def is_bad_word(self, word):
+        return re.match(r'[\d%s]' % re.escape(string.punctuation), word, flags=re.U)
+
     def predict(self, seeds, count=30):
-        seeds = list(set([x for x in seeds]))
+        seeds = set([x for x in seeds])
         hypos = defaultdict(lambda: [])
 
         vectors = np.array([self.vec_dict[seed] for seed in seeds if seed in self.vec_dict])
@@ -37,6 +50,11 @@ class GlovePredict(object):
             word = self.words[id]
             if word in seeds:
                 continue
+            if self.strip_siffixes(word) in seeds:
+                continue
+            if self.is_bad_word(word):
+                continue
+
             reduced.append((word, min(distances)))
 
         reduced.sort(key=lambda x: x[1])
