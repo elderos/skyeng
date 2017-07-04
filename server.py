@@ -11,13 +11,15 @@ import ujson as json
 from collab import CollabPredict, Stats
 import cherrypy_cors
 from neural import NeuralPredict
+from glovec import GlovePredict
 
 class WordPredict(object):
     def __init__(self):
         cherrypy.log('Initializing methods...')
         self.methods = {
             'collab': CollabPredict.load('collab.model'),
-            'neural': NeuralPredict.load('neural.model')
+            'neural': NeuralPredict.load('neural.model'),
+            'glovec': GlovePredict('glove.6B.50d.txt')
         }
 
     @cherrypy.expose
