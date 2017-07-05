@@ -19,6 +19,7 @@ class WordPredict(object):
         self.methods = {
             'collab': CollabPredict.load('collab.model'),
             'neural': NeuralPredict.load('neural.model'),
+            'neural2': NeuralPredict.load('neural_w_lessons2.model'),
             'glovec': GlovePredict('glove.6B.50d.txt')
         }
 
