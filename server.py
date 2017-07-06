@@ -54,9 +54,9 @@ class WordPredict(object):
         }, {
             'name': 'collab', 'method': CollabPredict.load('collab.model'),
         },
-        #     {
-        #     'name': 'glovec', 'method': GlovePredict('glove.6B.50d.txt'),
-        # }
+            {
+            'name': 'glovec', 'method': GlovePredict('glove.6B.50d.txt'),
+        }
         ]
 
     @cherrypy.expose
