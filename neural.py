@@ -44,15 +44,18 @@ class NeuralPredict(object):
         model = Sequential([
             Embedding(
                 input_dim=len(self.vocab) + 1,
-                output_dim=200,
+                output_dim=100,
                 input_length=self.seq_len,
                 mask_zero=True,
-                embeddings_regularizer='l2'
+                # embeddings_regularizer='l2'
             ),
             Dropout(0.2),
-            GRU(200, return_sequences=False, activity_regularizer='l2'),
+            GRU(100, 
+                activation='tanh',
+                # activity_regularizer='l2'
+                ),
             Dropout(0.2),
-            Dense(250, activity_regularizer='l2'),
+            Dense(250, activation='tanh'),
             Dropout(0.2),
             Dense(len(self.meanings), activation='softmax')
         ])
