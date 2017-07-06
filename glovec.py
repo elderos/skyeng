@@ -43,6 +43,8 @@ class GlovePredict(object):
 
     def predict(self, seeds, count=30):
         seeds = set([x for x in seeds])
+        if len(seeds) < 1:
+            return []
         hypos = defaultdict(lambda: [])
 
         vectors = np.array([self.vec_dict[seed] for seed in seeds if seed in self.vec_dict])
