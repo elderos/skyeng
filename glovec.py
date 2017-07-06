@@ -31,6 +31,10 @@ class GlovePredict(object):
         return word
 
     def is_bad_word(self, word):
+        if any([word.endswith(suf) for suf in ['ing', 'ed']]):
+            return True
+        if any([ch in word for ch in '0123456789`']):
+            return True
         if re.match('[%s]' % re.escape(string.punctuation), word, flags=re.U) is not None:
             return True
         if re.match(r'\d', word, flags=re.U):

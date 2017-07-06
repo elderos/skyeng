@@ -20,12 +20,14 @@ import itertools as it
 class WordPredict(object):
     def __init__(self, validate_filepath):
         cherrypy.log('Initializing methods...')
-        self.methods = {
-            'collab': CollabPredict.load('collab.model'),
-            'neural': NeuralPredict.load('neural.model'),
-            'neural2': NeuralPredict.load('neural_w_lessons2.model'),
-            'glovec': GlovePredict('glove.6B.50d.txt')
-        }
+
+        self.methods = [{
+            'name': 'neural', 'method': NeuralPredict.load('neural_w_lessons2.model'),
+        }, {
+            'name': 'collab', 'method': CollabPredict.load('collab.model'),
+        }, {
+            'name': 'glovec', 'method': GlovePredict('glove.6B.50d.txt'),
+        }]
         self.random_users = []
         self.random_lessons = []
         with open(validate_filepath, 'r') as f:
@@ -57,7 +59,9 @@ class WordPredict(object):
     def get_predicted_words(self, seeds):
         jdata = [x.encode('utf-8') for x in json.loads(seeds)]
         res = []
-        for method_name, method in self.methods.items():
+        for obj in self.methods:
+            method_name = obj['name']
+            method = obj['method']
             res.append({
                 'title': method_name,
                 'words': [
