@@ -43,14 +43,15 @@ body {
 
 .menu-btn {
     flex: 1;
-    max-width: 100px;
-    min-width: 100px;
+    max-width: 150px;
+    min-width: 150px;
     min-height: 30px;
     max-height: 30px;
 }
 
 #prompt {
     flex: 1;
+    margin: auto 0;
 }
 
 .section-container {

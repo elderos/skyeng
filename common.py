@@ -94,11 +94,11 @@ class AddedWord(object):
     def __str__(self):
         return '\t'.join([
             str(self.user_id),
-            str(self.word.meaning_id),
+            str(self.meaning.meaning_id),
             self.creation_time.strftime(DATE_FORMAT),
             self.source,
-            self.word.en,
-            self.word.ru
+            self.meaning.en,
+            self.meaning.ru
         ])
 
     def __repr__(self):

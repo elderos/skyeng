@@ -110,6 +110,34 @@ function on_predict_btn(){
     load_predicted_words(seeds_param);
 }
 
+function words_from_source(source){
+    var req = new XMLHttpRequest();
+    req.open('GET', source, true);
+    var textarea = document.getElementById('seed-area');
+    textarea.value = '';
+    req.onreadystatechange = function () {
+        if (req.readyState == XMLHttpRequest.DONE){
+            if (req.status == 200) {
+                var words = JSON.parse(req.responseText);
+                textarea.value = words.join('\n');
+                on_predict_btn();
+            } else {
+                textarea.value = 'Error while requesting server';
+            }
+        }
+    };
+    req.send(null);
+}
+
+function on_random_lesson_btn(){
+    words_from_source('random-lesson');
+}
+
+function on_random_user_btn(){
+    words_from_source('random-user');
+}
+
+
 window.addEventListener('popstate', function (e) {
     load_from_params();
 });

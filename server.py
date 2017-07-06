@@ -19,37 +19,45 @@ import itertools as it
 
 class WordPredict(object):
     def __init__(self, validate_filepath):
-        cherrypy.log('Initializing methods...')
-
-        self.methods = [{
-            'name': 'neural', 'method': NeuralPredict.load('neural_w_lessons2.model'),
-        }, {
-            'name': 'collab', 'method': CollabPredict.load('collab.model'),
-        }, {
-            'name': 'glovec', 'method': GlovePredict('glove.6B.50d.txt'),
-        }]
         self.random_users = []
         self.random_lessons = []
+        cherrypy.log('Reading validate file')
         with open(validate_filepath, 'r') as f:
             words = []
             for line in f:
                 word = AddedWord.parse(line)
                 if word:
                     words.append(word)
-            words.sort(key=lambda x: (x.user_id, x.source))
-            for user, words in it.groupby(words, key=lambda x: x.user_id):
-                en_words = list(set([w.meaning.en for w in words]))
-                if len(en_words) < 3:
-                    continue
-                self.random_users.append(en_words)
 
-            for (user, source), words in it.groupby(words, key=lambda x: (x.user_id, x.source)):
-                if not source.startswith('lesson_'):
-                    continue
-                en_words = list(set([w.meaning.en for w in words]))
-                if len(words) < 3:
-                    continue
-                self.random_lessons.append(en_words)
+        cherrypy.log('Filling random users')
+        words.sort(key=lambda x: (x.user_id, x.source))
+        for user, added_words in it.groupby(words, key=lambda x: x.user_id):
+            en_words = list(set([w.meaning.en for w in added_words]))
+            if len(en_words) < 3:
+                continue
+            self.random_users.append(en_words)
+
+        cherrypy.log('Filling random lessons')
+        for (user, source), added_words in it.groupby(words, key=lambda x: (x.user_id, x.source)):
+            if not source.startswith('lesson_'):
+                continue
+            en_words = list(set([w.meaning.en for w in added_words]))
+            if len(en_words) < 3:
+                continue
+            self.random_lessons.append(en_words)
+        cherrypy.log('Totas %s users, %s lessons' % (len(self.random_users), len(self.random_lessons)))
+
+        cherrypy.log('Initializing methods...')
+
+        self.methods = [{
+            'name': 'neural', 'method': NeuralPredict.load('neural_w_lessons2.model'),
+        }, {
+            'name': 'collab', 'method': CollabPredict.load('collab.model'),
+        },
+        #     {
+        #     'name': 'glovec', 'method': GlovePredict('glove.6B.50d.txt'),
+        # }
+        ]
 
     @cherrypy.expose
     def index(self):
